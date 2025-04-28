@@ -12,5 +12,9 @@ const CourseModel = new mongoose.Schema({
     type: String,
     required: true,
   },
+  courseImage: {
+    type: String,
+    required: true,
+  },
 });
 export default mongoose.model("Course", CourseModel);

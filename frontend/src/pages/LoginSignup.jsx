@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+
 import {
   Card,
   CardContent,
@@ -10,34 +11,83 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import {
+  useLoginUserMutation,
+  useRegisterUserMutation,
+} from "@/features/api/authApi";
+import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 const LoginSignup = () => {
-  const [signup, SetSignup] = useState({
-    username: "",
+  const [signup, setSignup] = useState({
+    name: "",
     email: "",
     password: "",
   });
-  const [login, SetLogin] = useState({
+  const [login, setLogin] = useState({
     email: "",
     password: "",
   });
+  const [
+    registerUser,
+    {
+      data: registerData,
+      error: registerError,
+      isLoading: isRegisterLoading,
+      isSuccess: isRegisterSuccess,
+    },
+  ] = useRegisterUserMutation();
+  const [
+    loginUser,
+    {
+      data: loginData,
+      error: loginError,
+      isLoading: isLoginLoading,
+      isSuccess: isLoginSuccess,
+    },
+  ] = useLoginUserMutation();
   const handleInputData = (e, type) => {
-    e.preventDefault();
-    console.log(login);
+    const { name, value } = e.target;
     if (type === "Signup") {
-      SetSignup({ ...signup, [e.target.name]: e.target.value });
+      setSignup({ ...signup, [name]: value });
     } else {
-      SetLogin({ ...login, [e.target.name]: e.target.value });
+      setLogin({ ...login, [name]: value });
     }
   };
-  const ButtonSubmit = (type) => {
-    let data = type === "Signup" ? "Signup" : "Login";
-    console.log(data);
+  const navigate = useNavigate();
+  const handleRegistration = async (type) => {
+    const inputData = type === "Signup" ? signup : login;
+    const action = type === "Signup" ? registerUser : loginUser;
+    await action(inputData);
   };
+  useEffect(() => {
+    if (isRegisterSuccess && registerData) {
+      toast.success(registerData.message || "Registration Successful");
+    }
+    if (registerError) {
+      toast.error(registerError.data.message || "Registration Failed");
+    }
+    if (isLoginSuccess && loginData) {
+      toast.success(loginData.message || "Login Successful");
+      navigate("/");
+    }
+    if (loginError) {
+      toast.error(loginError.data.message || "Login Failed");
+    }
+  }, [
+    isLoginLoading,
+    isRegisterLoading,
+    loginError,
+    loginData,
+    registerData,
+    loginError,
+    registerError,
+  ]);
   return (
-    <div className="flex  items-center justify-center">
-      <Tabs defaultValue="account" className="w-[400px] ">
+    <div className="flex items-center justify-center mt-20">
+      <Tabs defaultValue="account" className="w-[400px]">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="Signup">Signup</TabsTrigger>
           <TabsTrigger value="Login">Login</TabsTrigger>
@@ -47,7 +97,7 @@ const LoginSignup = () => {
             <CardHeader>
               <CardTitle>Signup</CardTitle>
               <CardDescription>
-                Make changes to your account here. Click save when you're done.
+                Create your account. Fill in the details and click Signup.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
@@ -56,45 +106,44 @@ const LoginSignup = () => {
                 <Input
                   id="name"
                   type="text"
-                  name="username"
-                  value={signup.username}
-                  onChange={(e) => {
-                    handleInputData(e, "Signup");
-                  }}
+                  name="name"
+                  value={signup.name}
+                  onChange={(e) => handleInputData(e, "Signup")}
                 />
               </div>
               <div className="space-y-1">
-                <Label htmlFor="username">Email</Label>
+                <Label htmlFor="email">Email</Label>
                 <Input
-                  id="username"
+                  id="email"
                   type="email"
                   name="email"
-                  onChange={(e) => {
-                    handleInputData(e, "Signup");
-                  }}
                   value={signup.email}
+                  onChange={(e) => handleInputData(e, "Signup")}
                 />
               </div>
               <div className="space-y-1">
-                <Label htmlFor="username">Password</Label>
+                <Label htmlFor="password">Password</Label>
                 <Input
-                  id="username"
+                  id="password"
                   type="password"
-                  value={signup.password}
                   name="password"
-                  onChange={(e) => {
-                    handleInputData(e, "Signup");
-                  }}
+                  value={signup.password}
+                  onChange={(e) => handleInputData(e, "Signup")}
                 />
               </div>
             </CardContent>
             <CardFooter>
               <Button
-                onClick={() => {
-                  ButtonSubmit("Signup");
-                }}
+                disabled={isRegisterLoading}
+                onClick={() => handleRegistration("Signup")}
               >
-                Signup
+                {isRegisterLoading ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin">
+                    please wait
+                  </Loader2>
+                ) : (
+                  "Signup"
+                )}
               </Button>
             </CardFooter>
           </Card>
@@ -104,42 +153,43 @@ const LoginSignup = () => {
             <CardHeader>
               <CardTitle>Login</CardTitle>
               <CardDescription>
-                Change your password here. After saving, you'll be logged out.
+                Enter your email and password to log in.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
               <div className="space-y-1">
-                <Label htmlFor="current">Email</Label>
+                <Label htmlFor="email">Email</Label>
                 <Input
-                  id="current"
+                  id="email"
                   type="email"
                   name="email"
                   value={login.email}
-                  onChange={(e) => {
-                    handleInputData(e, "Login");
-                  }}
+                  onChange={(e) => handleInputData(e, "Login")}
                 />
               </div>
               <div className="space-y-1">
-                <Label htmlFor="new">password</Label>
+                <Label htmlFor="password">Password</Label>
                 <Input
-                  id="new"
+                  id="password"
                   type="password"
                   name="password"
                   value={login.password}
-                  onChange={(e) => {
-                    handleInputData(e, "Login");
-                  }}
+                  onChange={(e) => handleInputData(e, "Login")}
                 />
               </div>
             </CardContent>
             <CardFooter>
               <Button
-                onClick={() => {
-                  ButtonSubmit("Login");
-                }}
+                disabled={isLoginLoading}
+                onClick={() => handleRegistration("Login")}
               >
-                Login
+                {isLoginLoading ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin">
+                    please wait
+                  </Loader2>
+                ) : (
+                  "Login"
+                )}
               </Button>
             </CardFooter>
           </Card>
@@ -148,4 +198,5 @@ const LoginSignup = () => {
     </div>
   );
 };
+
 export default LoginSignup;

@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import UserModel from "../models/User.model.js";
 import bcrypt from "bcrypt";
+import { generateToken } from "../utils/generateToken.js";
 export const Signup = async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -18,7 +19,10 @@ export const Signup = async (req, res) => {
       password: hashPassword,
     });
     await newUser.save();
-    return res.status(201).json({ message: "User created successfully" });
+    return res.status(201).json({
+      message: "User created successfully",
+      newUser,
+    });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
@@ -37,6 +41,7 @@ export const Login = async (req, res) => {
     if (!isPasswordValid) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
+    generateToken(res, user, `Welcome Back ${user.name}`);
     return res.status(200).json({ message: "Login successful" });
   } catch (error) {
     return res.status(500).json({ message: error.message });
